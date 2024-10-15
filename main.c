@@ -117,8 +117,15 @@ int main()
 
      load_data("/Users/hannah/Desktop/ZS2425/timovyP/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
+     double B_vals[n], L_vals[n];
+     for (int i = 0; i < n; i++) 
+     {
+        B_vals[i] = ELEM(B, i, 0);  // Get B values
+        L_vals[i] = ELEM(L, i, 0);  // Get L values
+     }
+
      // Výpočet súradníc
-     calculate_coordinates(coordinatesS, coordinatesX, coordinatesE, (double *)B->data, (double *)L->data, n, alt);
+     calculate_coordinates(coordinatesS, coordinatesX, coordinatesE,B_vals, L_vals, n, alt);
 
      // Výpočet matice vzdialeností
      calculate_distance_matrix(distanceMatrix, coordinatesX, coordinatesS, n);
@@ -130,40 +137,43 @@ int main()
      MAT *alpha = mat_create_with_type(n, 1);
      MAT *dgM = mat_create_with_type(n, 1);
 
-     // Predpokladajme, že dgM sa naplní dátami (môžeš použiť load_data alebo ručne)
-     mat_copy(dgM, dg); // Naplnenie dgM hodnotami z dg (ak to má rovnaké hodnoty)
+     // Fill dgM with data (you can use load_data or fill it manually)
+    for (int i = 0; i < n; i++) {
+        ELEM(dgM, i, 0) = ELEM(dg, i, 0); // Assuming dgM should hold dg values
+    }
 
-     // Riešenie systému rovníc A * alpha = dgM (potrebujeme funkciu na riešenie lineárnych systémov)
-     // Predpokladám, že je dostupná funkcia na riešenie sústavy lineárnych rovníc (napr. mat_solve)
-     mat_solve(alpha, A, dgM); // alpha je vektor riešení
+    // Solve the system A * alpha = dgM
+    if (mat_division(A, dgM, alpha) == SUCCESS) {
+        printf("Alpha vector:\n");
+        mat_print(alpha); // Print the result
+    } else {
+        printf("Failed to solve the system.\n");
+    }
 
-     // Výpočet finálneho vektora u
-     MAT *u = mat_create_with_type(n, 1);
+    // Calculate the final vector u (this assumes some operation with alpha)
+    MAT *u = mat_create_with_type(n, 1);
+    // Assuming u = A * alpha for demonstration (replace with your actual calculation)
+    mat_multiply(u, A, alpha); // If you want to compute u = A * alpha
 
-     // Predpokladám, že pre výpočet vektora u budeš musieť vykonať operácie s alpha
-     // (potrebuješ špecifikovať, ako vypočítaš u; ak je to nejaká lineárna kombinácia)
+    // Print the result
+    printf("Final vector u:\n");
+    mat_print(u);
 
-     // Napr. u = A * alpha (záleží na tom, aký výpočet chceš vykonať)
-     mat_multiply(u, A, alpha); // Ak platí u = A * alpha
+    // Free allocated memory
+    mat_destroy(coordinatesS);
+    mat_destroy(coordinatesX);
+    mat_destroy(coordinatesE);
+    mat_destroy(distanceMatrix);
+    mat_destroy(distanceVectors);
+    mat_destroy(A);
+    mat_destroy(alpha);
+    mat_destroy(dgM);
+    mat_destroy(u);
+    mat_destroy(B);
+    mat_destroy(L);
+    mat_destroy(H);
+    mat_destroy(dg);
+    mat_destroy(f);
 
-     // Vytlačenie výsledku
-     mat_print(u);
-
-     // Uvoľnenie pamäte
-     mat_destroy(coordinatesS);
-     mat_destroy(coordinatesX);
-     mat_destroy(coordinatesE);
-     mat_destroy(distanceMatrix);
-     mat_destroy(distanceVectors);
-     mat_destroy(A);
-     mat_destroy(alpha);
-     mat_destroy(dgM);
-     mat_destroy(u);
-     mat_destroy(B);
-     mat_destroy(L);
-     mat_destroy(H);
-     mat_destroy(dg);
-     mat_destroy(f);
-
-     return 0;
+    return 0;
 }
