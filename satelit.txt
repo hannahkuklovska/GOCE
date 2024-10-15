@@ -1,0 +1,133 @@
+
+data = Import["/Users/hannah/Desktop/ZS2425/timovyP/BL-3602.dat", 
+   "Table"];
+(*Uloženie daných stĺpcov do daných názvov, priradenie*)
+B = data[[All, 1]];
+L = data[[All, 2]];
+H = data[[All, 3]];
+dg = data[[All, 4]];
+f = data[[All, 5]];
+
+(*Konštanty*)
+GM = 398600.5; (*GM*)
+R = 6378;
+altitude = 230;
+dGM = (2*GM)/((R + altitude)^3);
+n = 3602;
+(*konštantné pole dGM*)
+dGMarray = ConstantArray[dGM, n];
+
+
+(*konverzia na radiany*)
+Brad = N[B* Degree];
+Lrad = N[L *Degree];
+
+(*polomer + nejaká hodnota, funkcia, jej definícia*)
+Rtotal[alt_] := R + alt;
+
+(*funckia na vypocet vzdialenosti bodov*)
+distance[{x1_, y1_, z1_}, {x2_, y2_, z2_}] := 
+  Sqrt[(x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2];
+
+(*Inicializácia matice Aij*)
+A = Table[0.0, {n}, {n}];
+
+(*Polia s kartézskymi koordinátmi, 3 prvky, pre Sj source points*)
+
+
+coordinatesS = Table[
+   {
+    Rtotal[0]*Cos[Brad[[i]]]*Cos[Lrad[[i]]],    (*x komponent*)
+    Rtotal[0]*Cos[Brad[[i]]]*Sin[Lrad[[i]]],    (*y*)
+    Rtotal[0]*
+     Sin[Brad[[
+       i]]]                                       (*z component*)
+    },
+   
+   {i, 1, n}];
+
+(*Polia s kartézskymi koordinátmi, 3 prvky, pre Sj source points*)
+
+coordinatesX = Table[
+   {
+    Rtotal[altitude]*Cos[Brad[[i]]]*Cos[Lrad[[i]]],    (*x komponent*)
+    Rtotal[altitude]*Cos[Brad[[i]]]*Sin[Lrad[[i]]],    (*y*)
+    Rtotal[altitude]*
+     Sin[Brad[[
+       i]]]                                       (*z component*)
+    },
+   
+   {i, 1, n}];
+
+(*Polia s kartézskymi koordinátmi, 3 prvky, pre Sj source points*)
+
+coordinatesE = Table[
+   {
+    Cos[Brad[[i]]]*Cos[Lrad[[i]]],    (*x komponent*)
+    Cos[Brad[[i]]]*Sin[Lrad[[i]]],    (*y*)
+    Sin[Brad[[
+      i]]]                                       (*z component*)
+    },
+   
+   {i, 1, n}];
+
+(*Zobrazenie prvých 10 prvkou každého pola*)
+coordinatesS[[1 ;; 10]];
+coordinatesX[[1 ;; 10]];
+coordinatesE[[1 ;; 10]];
+
+(*pole/matica vzdialenosti zodpovedajucich bodov X a S*)
+distanceMatrix = Table[
+   distance[coordinatesX[[i]], coordinatesS[[j]]], 
+   {i, 1, n}, 
+   	{j, 1, n}
+   
+   ];
+
+numericDistanceMatrix = N[distanceMatrix];
+numericDistanceMatrix[[1 ;; 5, 1 ;; 5]]
+
+(*vektory vzdialenosti rij, vytvorenie pola*)
+distanceVectors = Table[
+   coordinatesX[[i]] - coordinatesS[[j]], 
+   {i, 1, n}, 
+   {j, 1, n}
+   ];
+
+distanceVectors[[1 ;; 5, 1 ;; 5]]
+(*Matica Aij*)
+
+For[i = 1, i <= n, i++,
+  For[j = 1, j <= n, j++,
+   rij = numericDistanceMatrix[[i, j]];
+   rijVector = distanceVectors[[i, j]];
+   ei = coordinatesE[[i]];
+   dotProduct = Dot[rijVector, ei];
+   A[[i, j]] = (1/(rij)^3) - ((3*((dotProduct)^2))/(rij^5));
+   ]
+  ];
+
+
+numericA = N[A];
+numericA[[1 ;; 5, 1 ;; 5]]
+
+alpha = LinearSolve[numericA, dGMarray ]
+
+(*Gij =*alpha = u*)
+
+
+For[i = 1, i <= n, i++,
+  For[j = 1, j <= n, j++,
+   rij = numericDistanceMatrix[[i, j]];
+   u[[i]] = u[[i]] + alpha[[j]]*(1/numericDistanceMatrix[[i, j]]);
+   ]
+  ];
+u
+
+
+
+
+
+
+
+
