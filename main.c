@@ -27,7 +27,7 @@ void calculate_coordinates(MAT *coordinatesS, MAT *coordinatesX, MAT *coordinate
           double Lrad = rad(L[i]);
 
           // S koordinaty
-          ELEM(coordinatesS, i, 0) = Rtotal(0) * cos(Brad) * cos(Lrad);
+          ELEM(coordinatesS, i, 0) = Rtotal(0) * cos(Brad) * cos(Lrad); // ELEM je element matice na prislusnom mieste
           ELEM(coordinatesS, i, 1) = Rtotal(0) * cos(Brad) * sin(Lrad);
           ELEM(coordinatesS, i, 2) = Rtotal(0) * sin(Brad);
 
