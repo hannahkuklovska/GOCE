@@ -99,6 +99,32 @@ void load_data(const char *filename, MAT *B, MAT *L, MAT *H, MAT *dg, MAT *f, in
      fclose(file);
 }
 
+// Matrix multiplication function
+// pridavam novu funkciu
+void mat_multiply(MAT *result, const MAT *A, const MAT *B)
+{
+    if (A->cols != B->rows)
+    {
+        printf("Matrix dimensions do not match for multiplication.\n");
+        return;
+    }
+
+    // Initialize the result matrix to zero
+    mat_zero(result);
+
+    for (unsigned int i = 0; i < A->rows; i++)
+    {
+        for (unsigned int j = 0; j < B->cols; j++)
+        {
+            for (unsigned int k = 0; k < A->cols; k++)
+            {
+                ELEM(result, i, j) += ELEM(A, i, k) * ELEM(B, k, j);
+            }
+        }
+    }
+}
+
+
 int main()
 {
      int n = 3602;
@@ -115,7 +141,7 @@ int main()
      MAT *dg = mat_create_with_type(n, 1); // Matice pre dg
      MAT *f = mat_create_with_type(n, 1);  // Matice pre f
 
-     load_data("/Users/hannah/Desktop/ZS2425/timovyP/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
+     load_data("C:\\Users\\puvak\\OneDrive\\Počítač\\Timovy projekt\\GOCE-4\\BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
      double B_vals[n], L_vals[n];
      for (int i = 0; i < n; i++) 
@@ -155,9 +181,16 @@ int main()
     // Assuming u = A * alpha for demonstration (replace with your actual calculation)
     mat_multiply(u, A, alpha); // If you want to compute u = A * alpha
 
-    // Print the result
+    //Print the result
     printf("Final vector u:\n");
     mat_print(u);
+
+     MAT *u1 = mat_create_with_type(n, 1);
+    mat_division(u1,A,alpha);
+    printf("Final vector u:\n");
+    mat_print(u);
+
+
 
     // Free allocated memory
     mat_destroy(coordinatesS);
