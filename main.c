@@ -78,64 +78,52 @@ void calculate_Aij(MAT *A, MAT *distanceMatrix, MAT *distanceVectors, MAT *coord
      }
 }
 
-void main()
+int main()
 {
-     MAT *a, *b, *m;
-     MAT *nacitana;
+     int n = 3602;
+     MAT *coordinatesS = mat_create_with_type(n, 3);
+     MAT *coordinatesX = mat_create_with_type(n, 3);
+     MAT *coordinatesE = mat_create_with_type(n, 3);
+     MAT *distanceMatrix = mat_create_with_type(n, n);
+     MAT *distanceVectors = mat_create_with_type(n, n, 3);
+     MAT *A = mat_create_with_type(n, n);
 
-     a = mat_create_with_type(2, 2);
-     b = mat_create_with_type(2, 2);
-     m = mat_create_with_type(2, 2);
+     // Arrays for B, L (read from file)
+     double B[n], L[n];
+     // Load data into B, L arrays
 
-     ELEM(a, 0, 0) = 1;
-     ELEM(a, 0, 1) = 2;
-     ELEM(a, 1, 0) = 3;
-     ELEM(a, 1, 1) = 4;
+     // Coordinate calculations
+     calculate_coordinates(coordinatesS, coordinatesX, coordinatesE, B, L, n, alt);
 
-     ELEM(b, 0, 0) = 5;
-     ELEM(b, 0, 1) = 3;
-     ELEM(b, 1, 0) = 1;
-     ELEM(b, 1, 1) = 7;
+     // Distance matrix calculation
+     calculate_distance_matrix(distanceMatrix, coordinatesX, coordinatesS, n);
 
-     printf("A = \n");
-     mat_print(a);
-     printf("B =\n");
-     mat_print(b);
+     // Aij calculation
+     calculate_Aij(A, distanceMatrix, distanceVectors, coordinatesE, n);
 
-     if (mat_division(a, b, m) == SUCCESS)
-     {
-          printf("B/A = \n");
-          mat_print(m);
-     }
-     else
-     {
-          printf("Fail.\n");
-     }
+     // Solve for alpha
+     MAT *alpha = mat_create_with_type(n, 1);
+     MAT *dgM = mat_create_with_type(n, 1);
+     // Fill dgM array with values
+     // Solve A * alpha = dgM
 
-     // ulozenie matice
-     if (mat_save(a, "mat_a.dat") == SUCCESS)
-     {
-          printf("Matica bola uspesne ulozena.\n");
-     }
-     else
-     {
-          printf("Ulozenie sa nepodarilo.\n");
-     }
+     // Final u vector calculation
+     MAT *u = mat_create_with_type(n, 1);
+     // Calculate u
 
-     // nacitanie matice
-     nacitana = mat_create_by_file("mat_a.dat");
-     if (nacitana != NULL)
-     {
-          printf("Matica bola uspesne nacitana.\n");
-          mat_print(nacitana);
-     }
-     else
-     {
-          printf("Nacitanie zlyhalo.\n");
-     }
+     // Print the result
+     mat_print(u);
 
-     mat_destroy(a);
-     mat_destroy(b);
-     mat_destroy(m);
-     mat_destroy(nacitana);
+     // Free memory
+     mat_destroy(coordinatesS);
+     mat_destroy(coordinatesX);
+     mat_destroy(coordinatesE);
+     mat_destroy(distanceMatrix);
+     mat_destroy(distanceVectors);
+     mat_destroy(A);
+     mat_destroy(alpha);
+     mat_destroy(dgM);
+     mat_destroy(u);
+
+     return 0;
 }
