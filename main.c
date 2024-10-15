@@ -1,6 +1,46 @@
 
 #include <stdio.h>
+#include <math.h>
 #include "mat.h"
+
+#define R 6378
+#define N 3602
+#define GM 398600.5
+#define alt 230
+
+double rad(double degree)
+{
+     return (degree * M_PI) / 180.0; // prevod na radiány
+}
+
+double Rtotal(double altitude)
+{
+     return (R + alt);
+}
+
+void calculate_coordinates(MAT *coordinatesS, MAT *coordinatesX, MAT *coordinatesE, double *B, double *L, int n, double altitude)
+{
+     for (int i = 0; i < n; i++)
+     {
+          double Brad = rad(B[i]);
+          double Lrad = rad(L[i]);
+
+          // S coordinates
+          ELEM(coordinatesS, i, 0) = Rtotal(0) * cos(Brad) * cos(Lrad);
+          ELEM(coordinatesS, i, 1) = Rtotal(0) * cos(Brad) * sin(Lrad);
+          ELEM(coordinatesS, i, 2) = Rtotal(0) * sin(Brad);
+
+          // X coordinates
+          ELEM(coordinatesX, i, 0) = Rtotal(altitude) * cos(Brad) * cos(Lrad);
+          ELEM(coordinatesX, i, 1) = Rtotal(altitude) * cos(Brad) * sin(Lrad);
+          ELEM(coordinatesX, i, 2) = Rtotal(altitude) * sin(Brad);
+
+          // E coordinates
+          ELEM(coordinatesE, i, 0) = cos(Brad) * cos(Lrad);
+          ELEM(coordinatesE, i, 1) = cos(Brad) * sin(Lrad);
+          ELEM(coordinatesE, i, 2) = sin(Brad);
+     }
+}
 
 void main()
 {
