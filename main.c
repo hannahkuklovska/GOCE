@@ -69,13 +69,33 @@ void calculate_Aij(MAT *A, MAT *distanceMatrix, MAT *distanceVectors, MAT *coord
           {
                double rij = ELEM(distanceMatrix, i, j);
                double dotProduct = 0.0;
-               for (int k = 0; k < 3; k++)
-               {
-                    dotProduct += ELEM(distanceVectors, i, j, k) * ELEM(coordinatesE, i, k);
-               }
+               dotProduct = rij * ELEM(coordinatesE, i, j);
                ELEM(A, i, j) = (1 / pow(rij, 3)) - ((3 * pow(dotProduct, 2)) / pow(rij, 5));
           }
      }
+}
+
+void load_data(const char *filename, MAT *B, MAT *L, MAT *H, MAT *dg, MAT *f, int n)
+{
+     FILE *file = fopen(filename, "r");
+     if (file == NULL)
+     {
+          printf("Error opening file.\n");
+          exit(1);
+     }
+
+     for (int i = 0; i < n; i++)
+     {
+          double bi, li, hi, dgi, fi;
+          fscanf(file, "%lf %lf %lf %lf %lf", &bi, &li, &hi, &dgi, &fi);
+          ELEM(B, i, 0) = bi;
+          ELEM(L, i, 0) = li;
+          ELEM(H, i, 0) = hi;
+          ELEM(dg, i, 0) = dgi;
+          ELEM(f, i, 0) = fi;
+     }
+
+     fclose(file);
 }
 
 int main()
