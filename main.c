@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "mat.h"
+#include <stdlib.h>
 
 #define R 6378
 #define N 3602
@@ -105,36 +106,50 @@ int main()
      MAT *coordinatesX = mat_create_with_type(n, 3);
      MAT *coordinatesE = mat_create_with_type(n, 3);
      MAT *distanceMatrix = mat_create_with_type(n, n);
-     MAT *distanceVectors = mat_create_with_type(n, n, 3);
+     MAT *distanceVectors = mat_create_with_type(n, n * 3);
      MAT *A = mat_create_with_type(n, n);
 
-     // Arrays for B, L (read from file)
-     double B[n], L[n];
-     // Load data into B, L arrays
+     MAT *B = mat_create_with_type(n, 1);  // Matice pre šírku (B)
+     MAT *L = mat_create_with_type(n, 1);  // Matice pre dĺžku (L)
+     MAT *H = mat_create_with_type(n, 1);  // Matice pre výšku (H)
+     MAT *dg = mat_create_with_type(n, 1); // Matice pre dg
+     MAT *f = mat_create_with_type(n, 1);  // Matice pre f
 
-     // Coordinate calculations
-     calculate_coordinates(coordinatesS, coordinatesX, coordinatesE, B, L, n, alt);
+     load_data("/Users/hannah/Desktop/ZS2425/timovyP/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
-     // Distance matrix calculation
+     // Výpočet súradníc
+     calculate_coordinates(coordinatesS, coordinatesX, coordinatesE, (double *)B->data, (double *)L->data, n, alt);
+
+     // Výpočet matice vzdialeností
      calculate_distance_matrix(distanceMatrix, coordinatesX, coordinatesS, n);
 
-     // Aij calculation
+     // Výpočet matice Aij
      calculate_Aij(A, distanceMatrix, distanceVectors, coordinatesE, n);
 
-     // Solve for alpha
+     // Riešenie pre alpha
      MAT *alpha = mat_create_with_type(n, 1);
      MAT *dgM = mat_create_with_type(n, 1);
-     // Fill dgM array with values
-     // Solve A * alpha = dgM
 
-     // Final u vector calculation
+     // Predpokladajme, že dgM sa naplní dátami (môžeš použiť load_data alebo ručne)
+     mat_copy(dgM, dg); // Naplnenie dgM hodnotami z dg (ak to má rovnaké hodnoty)
+
+     // Riešenie systému rovníc A * alpha = dgM (potrebujeme funkciu na riešenie lineárnych systémov)
+     // Predpokladám, že je dostupná funkcia na riešenie sústavy lineárnych rovníc (napr. mat_solve)
+     mat_solve(alpha, A, dgM); // alpha je vektor riešení
+
+     // Výpočet finálneho vektora u
      MAT *u = mat_create_with_type(n, 1);
-     // Calculate u
 
-     // Print the result
+     // Predpokladám, že pre výpočet vektora u budeš musieť vykonať operácie s alpha
+     // (potrebuješ špecifikovať, ako vypočítaš u; ak je to nejaká lineárna kombinácia)
+
+     // Napr. u = A * alpha (záleží na tom, aký výpočet chceš vykonať)
+     mat_multiply(u, A, alpha); // Ak platí u = A * alpha
+
+     // Vytlačenie výsledku
      mat_print(u);
 
-     // Free memory
+     // Uvoľnenie pamäte
      mat_destroy(coordinatesS);
      mat_destroy(coordinatesX);
      mat_destroy(coordinatesE);
@@ -144,6 +159,11 @@ int main()
      mat_destroy(alpha);
      mat_destroy(dgM);
      mat_destroy(u);
+     mat_destroy(B);
+     mat_destroy(L);
+     mat_destroy(H);
+     mat_destroy(dg);
+     mat_destroy(f);
 
      return 0;
 }
