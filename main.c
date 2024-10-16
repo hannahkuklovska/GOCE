@@ -421,7 +421,7 @@ int main()
      MAT *dg = mat_create_with_type(n, 1); // Matice pre dg
      MAT *f = mat_create_with_type(n, 1);  // Matice pre f
 
-     load_data("/Users/hannah/Desktop/GOCE-1/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
+     load_data("/Users/ninalackovicova/Downloads/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
      double B_vals[n], L_vals[n];
      for (int i = 0; i < n; i++)
