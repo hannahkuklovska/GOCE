@@ -364,7 +364,7 @@ char mat_multiply(MAT *a, MAT *b, MAT *c)
      }
 
      // Initialize the output matrix
-     mat_zero(c); // Assuming this sets all elements of c to 0
+     mat_zero(c); // vynulovanie c
 
      for (unsigned int i = 0; i < a->rows; i++)
      {
