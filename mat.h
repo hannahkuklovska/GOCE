@@ -1,5 +1,6 @@
 
-
+#ifndef MAT_H
+#define MAT_H
 #define ELEM(mat, i, j) ((mat)->elem[(i) * (mat)->cols + j])
 #define SUCCESS 1
 #define FAILURE 0
@@ -21,3 +22,5 @@ void mat_random(MAT *mat);
 void mat_print(MAT *mat);
 MAT *mat_invert(MAT *input_matrix);
 char mat_division(MAT *a, MAT *b, MAT *c);
+
+#endif // MAT_H
