@@ -4,15 +4,16 @@
 #include "mat.h"
 #include <stdlib.h>
 
-#define R 6378
-#define N 3602
-#define GM 398600.5
-#define alt 230
-#define dGM 0.0000270141
+#define R 6378      // polomer Zeme v km
+#define N 3602      //   pocet dat
+#define GM 398600.5      //gravitacia Zeme (v km^3/s^2)
+#define alt 230          // vyska v km
+#define dGM 0.0000270141      
 
+// vytvorenie matice s danymi rozmermi
 MAT *mat_create_with_type(unsigned int rows, unsigned int cols)
 {
-     MAT *mat = (MAT *)malloc(sizeof(MAT));
+     MAT *mat = (MAT *)malloc(sizeof(MAT));  // alokacia pamate pre strukturu matice
 
      if (mat == NULL)
      {
@@ -20,7 +21,7 @@ MAT *mat_create_with_type(unsigned int rows, unsigned int cols)
      }
      mat->rows = rows;
      mat->cols = cols;
-     mat->elem = (float *)malloc(rows * cols * sizeof(float));
+     mat->elem = (float *)malloc(rows * cols * sizeof(float));        // alokacia pamate pre prvky matice
      if (mat->elem == NULL)
      {
           free(mat);
@@ -43,6 +44,7 @@ MAT *mat_zero(MAT *null)
      return null;
 }
 
+// nacita maticu zo suboru
 MAT *mat_create_by_file(char *filename)
 {
      unsigned int rows, cols;
@@ -61,8 +63,8 @@ MAT *mat_create_by_file(char *filename)
           return NULL;
      }
 
-     fread(&rows, sizeof(unsigned int), 1, file);
-     fread(&cols, sizeof(unsigned int), 1, file);
+     fread(&rows, sizeof(unsigned int), 1, file); // nacita pocet riadkov
+     fread(&cols, sizeof(unsigned int), 1, file); // nacita pocet stlpcov
 
      // vytvorenie matice
      MAT *mat = mat_create_with_type(rows, cols);
@@ -78,6 +80,7 @@ MAT *mat_create_by_file(char *filename)
      return mat;
 }
 
+// ulozenie matice do suboru
 char mat_save(MAT *mat, char *filename)
 {
      FILE *file = fopen(filename, "wb");
@@ -86,13 +89,14 @@ char mat_save(MAT *mat, char *filename)
           return FAILURE;
      }
      fwrite("M1", sizeof(char), 2, file);
-     fwrite(&(mat->rows), sizeof(unsigned int), 1, file);
-     fwrite(&(mat->cols), sizeof(unsigned int), 1, file);
-     fwrite(mat->elem, sizeof(float), mat->rows * mat->cols, file);
+     fwrite(&(mat->rows), sizeof(unsigned int), 1, file);   // ulozi pocet riadkov
+     fwrite(&(mat->cols), sizeof(unsigned int), 1, file);   // ulozi pocet stlpcov
+     fwrite(mat->elem, sizeof(float), mat->rows * mat->cols, file);   // ulozi prvky matice
      fclose(file);
      return SUCCESS;
 }
 
+// uvolnenie pamate
 void mat_destroy(MAT *mat)
 {
      if (mat != NULL)
@@ -102,6 +106,7 @@ void mat_destroy(MAT *mat)
      }
 }
 
+// nastavenie jednotkovej matice
 void mat_unit(MAT *mat)
 {
      unsigned int i, j;
@@ -112,16 +117,17 @@ void mat_unit(MAT *mat)
           {
                if (i == j)
                {
-                    ELEM(mat, i, j) = 1.0;
+                    ELEM(mat, i, j) = 1.0;   // diagonalne prvky nastavi na 1
                }
                else
                {
-                    ELEM(mat, i, j) = 0.0;
+                    ELEM(mat, i, j) = 0.0;   // ostatne prvky nastavi na 0
                }
           }
      }
 }
 
+// vygeneruje maticu nahodnych hodnot
 void mat_random(MAT *mat)
 {
      unsigned int i, j;
@@ -135,6 +141,7 @@ void mat_random(MAT *mat)
      }
 }
 
+// vypis matice
 void mat_print(MAT *mat)
 {
      unsigned int i, j;
@@ -149,6 +156,7 @@ void mat_print(MAT *mat)
      }
 }
 
+// inverzna matica, pomocou Gaussovej eliminacie
 MAT *mat_invert(MAT *input_matrix)
 {
      unsigned int dimension;
@@ -300,11 +308,13 @@ void calculate_coordinates(MAT *coordinatesS, MAT *coordinatesX, MAT *coordinate
      }
 }
 
+// vypocet vzdialenosti medzi bodmi na zaklade ich 3D suradnic
 double distance(double *x1, double *x2)
 {
      return sqrt(pow(x2[0] - x1[0], 2) + pow(x2[1] - x1[1], 2) + pow(x2[2] - x1[2], 2));
 }
 
+// vypocet matice vzdialenosti medzi suradnicami
 void calculate_distance_matrix(MAT *distanceMatrix, MAT *coordinatesX, MAT *coordinatesS, int n)
 {
      for (int i = 0; i < n; i++)
@@ -313,7 +323,7 @@ void calculate_distance_matrix(MAT *distanceMatrix, MAT *coordinatesX, MAT *coor
           {
                double p1[3] = {ELEM(coordinatesX, i, 0), ELEM(coordinatesX, i, 1), ELEM(coordinatesX, i, 2)};
                double p2[3] = {ELEM(coordinatesS, j, 0), ELEM(coordinatesS, j, 1), ELEM(coordinatesS, j, 2)};
-               ELEM(distanceMatrix, i, j) = distance(p1, p2);
+               ELEM(distanceMatrix, i, j) = distance(p1, p2);    // uklada vypocitanu vzdialenost medzi dvoma bodmi
           }
      }
 }
@@ -332,6 +342,7 @@ void calculate_Aij(MAT *A, MAT *distanceMatrix, MAT *distanceVectors, MAT *coord
      }
 }
 
+// nacita data z textoveho suboru
 void load_data(const char *filename, MAT *B, MAT *L, MAT *H, MAT *dg, MAT *f, int n)
 {
      FILE *file = fopen(filename, "r");
@@ -355,13 +366,12 @@ void load_data(const char *filename, MAT *B, MAT *L, MAT *H, MAT *dg, MAT *f, in
      fclose(file);
 }
 
-// Matrix multiplication function
-// pridavam novu funkciu
+// funkcia na nasobenie dvoch matic
 char mat_multiply(MAT *a, MAT *b, MAT *c)
 {
      if (a->cols != b->rows)
      {
-          return FAILURE; // Ensure valid multiplication
+          return FAILURE; /
      }
 
      // inicializácia matice na výsup
@@ -380,15 +390,15 @@ char mat_multiply(MAT *a, MAT *b, MAT *c)
      return SUCCESS; // operácia prebehla úspešne
 }
 
+// funkcia pre vypocet vektorov vzdialenosti medzi suradnicami v 3D priestore
 void compute_distance_vectors(MAT *coordinatesX, MAT *coordinatesS, MAT *distanceVectors, int n)
 {
      for (int i = 0; i < n; i++)
      {
           for (int j = 0; j < n; j++)
           {
-               for (int k = 0; k < 3; k++) // Assuming 3D coordinates (x, y, z)
+               for (int k = 0; k < 3; k++) 
                {
-                    // Calculate the difference between corresponding coordinates
                     ELEM(distanceVectors, i, j * 3 + k) = ELEM(coordinatesX, i, k) - ELEM(coordinatesS, j, k);
                }
           }
@@ -471,11 +481,7 @@ int main()
           printf("%.10f\n", ELEM(dGMarray, i, 1));
      }
 
-     // Free the allocated memory
-
-     // Calculate the final vector u (this assumes some operation with alpha)
      // MAT *u = mat_create_with_type(n, 1);
-     // Assuming u = A * alpha for demonstration (replace with your actual calculation)
      // mat_multiply(u, A, alpha); // If you want to compute u = A * alpha
 
      // Print the result
