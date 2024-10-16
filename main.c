@@ -371,7 +371,7 @@ char mat_multiply(MAT *a, MAT *b, MAT *c)
 {
      if (a->cols != b->rows)
      {
-          return FAILURE; /
+          return FAILURE; 
      }
 
      // inicializácia matice na výsup
