@@ -8,6 +8,7 @@
 #define N 3602
 #define GM 398600.5
 #define alt 230
+#define dGM 0.0000270141
 
 MAT *mat_create_with_type(unsigned int rows, unsigned int cols)
 {
@@ -363,7 +364,7 @@ char mat_multiply(MAT *a, MAT *b, MAT *c)
           return FAILURE; // Ensure valid multiplication
      }
 
-     // Initialize the output matrix
+     // inicializácia matice na výsup
      mat_zero(c); // vynulovanie c
 
      for (unsigned int i = 0; i < a->rows; i++)
@@ -376,7 +377,22 @@ char mat_multiply(MAT *a, MAT *b, MAT *c)
                }
           }
      }
-     return SUCCESS; // Return success after multiplication
+     return SUCCESS; // operácia prebehla úspešne
+}
+
+void compute_distance_vectors(MAT *coordinatesX, MAT *coordinatesS, MAT *distanceVectors, int n)
+{
+     for (int i = 0; i < n; i++)
+     {
+          for (int j = 0; j < n; j++)
+          {
+               for (int k = 0; k < 3; k++) // Assuming 3D coordinates (x, y, z)
+               {
+                    // Calculate the difference between corresponding coordinates
+                    ELEM(distanceVectors, i, j * 3 + k) = ELEM(coordinatesX, i, k) - ELEM(coordinatesS, j, k);
+               }
+          }
+     }
 }
 
 int main()
@@ -410,51 +426,49 @@ int main()
      // Výpočet matice vzdialeností
      calculate_distance_matrix(distanceMatrix, coordinatesX, coordinatesS, n);
 
+     // distanceVectors
+     compute_distance_vectors(coordinatesX, coordinatesS, distanceVectors, n);
      // Výpočet matice Aij
+
      calculate_Aij(A, distanceMatrix, distanceVectors, coordinatesE, n);
 
      // Riešenie pre alpha
      MAT *alpha = mat_create_with_type(n, 1);
-     MAT *dgM = mat_create_with_type(n, 1);
+     MAT *dGMarray = mat_create_with_type(n, 1);
 
-     // Fill dgM with data (you can use load_data or fill it manually)
      for (int i = 0; i < n; i++)
      {
-          ELEM(dgM, i, 0) = ELEM(dg, i, 0); // Assuming dgM should hold dg values
+          // dGMarray ma n rows a 1 column
+          // ELEM(rows, columns)
+          ELEM(dGMarray, i, 1) = dGM;
      }
 
-     // Solve the system A * alpha = dgM
-     if (mat_division(A, dgM, alpha) == SUCCESS)
+     // Linerany system A * alpha = dgM, alpha = A^(-1) * dGMarray, A sa v solv. invertuje
+     if (mat_division(A, dGMarray, alpha) == SUCCESS)
      {
           printf("Alpha vector:\n");
-          // mat_print(alpha); // Print the result
+          // mat_print(alpha); //
      }
      else
      {
-          printf("Failed to solve the system.\n");
+          printf("Nepodarilo sa vypočítať alphu.\n");
      }
 
-     double dGM = (2 * GM) / pow((R + alt), 3);
+     // vypísanie dGMarray
 
-     // Create dGMarray
-     double *dGMarray = (double *)malloc(n * sizeof(double));
-     if (dGMarray == NULL)
+     printf("Prvých 10 prvkov Aij:\n");
+     for (int i = 0; i < 5; i++)
      {
-          fprintf(stderr, "Memory allocation failed\n");
-          return 1; // Exit if memory allocation fails
+          for (int j = 0; j < 5; j++)
+          {
+               printf("%.10f\n", ELEM(A, i, j));
+          }
      }
 
-     // Fill the array with the constant value dGM
-     for (int i = 0; i < n; i++)
-     {
-          dGMarray[i] = dGM;
-     }
-
-     // Optional: Print the first 10 values of dGMarray to verify
-     printf("First 10 values of dGMarray:\n");
+     printf("Prvých 10 prvkov dGMarray:\n");
      for (int i = 0; i < 10; i++)
      {
-          printf("%f\n", dGMarray[i]);
+          printf("%.10f\n", ELEM(dGMarray, i, 1));
      }
 
      // Free the allocated memory
@@ -475,7 +489,7 @@ int main()
 
      mat_print(u1);
 
-     // Free allocated memory
+     // uvolenie alokovanej pamäte
      mat_destroy(coordinatesS);
      mat_destroy(coordinatesX);
      mat_destroy(coordinatesE);
@@ -483,14 +497,13 @@ int main()
      mat_destroy(distanceVectors);
      mat_destroy(A);
      mat_destroy(alpha);
-     mat_destroy(dgM);
+     mat_destroy(dGMarray);
      mat_destroy(u1);
      mat_destroy(B);
      mat_destroy(L);
      mat_destroy(H);
      mat_destroy(dg);
      mat_destroy(f);
-     free(dGMarray);
 
      return 0;
 }
