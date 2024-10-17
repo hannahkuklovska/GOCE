@@ -284,14 +284,14 @@ void calculate_coordinates(MAT *coordinatesS, MAT *coordinatesX, MAT *coordinate
           double Lrad = rad(L[i]);
 
           // S koordinaty
-          ELEM(coordinatesS, i, 0) = Rtotal(0) * cos(Brad) * cos(Lrad); // ELEM je element matice na prislusnom mieste
-          ELEM(coordinatesS, i, 1) = Rtotal(0) * cos(Brad) * sin(Lrad);
-          ELEM(coordinatesS, i, 2) = Rtotal(0) * sin(Brad);
+          ELEM(coordinatesS, i, 0) = R * cos(Brad) * cos(Lrad); // ELEM je element matice na prislusnom mieste
+          ELEM(coordinatesS, i, 1) = R * cos(Brad) * sin(Lrad);
+          ELEM(coordinatesS, i, 2) = R * sin(Brad);
 
           // X koordinaty
-          ELEM(coordinatesX, i, 0) = Rtotal(altitude) * cos(Brad) * cos(Lrad);
-          ELEM(coordinatesX, i, 1) = Rtotal(altitude) * cos(Brad) * sin(Lrad);
-          ELEM(coordinatesX, i, 2) = Rtotal(altitude) * sin(Brad);
+          ELEM(coordinatesX, i, 0) = (R+alt) * cos(Brad) * cos(Lrad);
+          ELEM(coordinatesX, i, 1) = (R+alt) * cos(Brad) * sin(Lrad);
+          ELEM(coordinatesX, i, 2) = (R+alt) * sin(Brad);
 
           // E koordinaty
           ELEM(coordinatesE, i, 0) = cos(Brad) * cos(Lrad);
@@ -318,15 +318,21 @@ void calculate_distance_matrix(MAT *distanceMatrix, MAT *coordinatesX, MAT *coor
      }
 }
 
-void calculate_Aij(MAT *A, MAT *distanceMatrix, MAT *distanceVectors, MAT *coordinatesE, int n)
+void calculate_Aij(MAT *A, MAT *coordinatesX, MAT *coordinatesS, MAT *coordinatesE, int n)
 {
      for (int i = 0; i < n; i++)
      {
           for (int j = 0; j < n; j++)
           {
-               double rij = ELEM(distanceMatrix, i, j);
-               double dotProduct = 0.0;
-               dotProduct = rij * ELEM(coordinatesE, i, j);
+               double p1[3] = {ELEM(coordinatesX, i, 0), ELEM(coordinatesX, i, 1), ELEM(coordinatesX, i, 2)};
+               double p2[3] = {ELEM(coordinatesS, j, 0), ELEM(coordinatesS, j, 1), ELEM(coordinatesS, j, 2)};
+               double dx,dy,dz, rij;
+               dx= p1[0] - p2[0];
+               dy= p1[1] - p2[1];
+               dz= p1[2] - p2[2];
+               rij= sqrt(dx*dx + dy*dy + dz*dz);
+               double dotProduct;
+               dotProduct = dx * ELEM(coordinatesE, i, 0) + dy * ELEM(coordinatesE, i, 1) + dz * ELEM(coordinatesE, i, 2);
                ELEM(A, i, j) = (1 / pow(rij, 3)) - ((3 * pow(dotProduct, 2)) / pow(rij, 5));
           }
      }
@@ -441,13 +447,13 @@ int main()
      calculate_coordinates(coordinatesS, coordinatesX, coordinatesE, B_vals, L_vals, n, alt);
 
      // Výpočet matice vzdialeností
-     calculate_distance_matrix(distanceMatrix, coordinatesX, coordinatesS, n);
+     //calculate_distance_matrix(distanceMatrix, coordinatesX, coordinatesS, n);
 
      // distanceVectors
-     compute_distance_vectors(coordinatesX, coordinatesS, distanceVectors, n);
+     //compute_distance_vectors(coordinatesX, coordinatesS, distanceVectors, n);
      // Výpočet matice Aij
 
-     calculate_Aij(A, distanceMatrix, distanceVectors, coordinatesE, n);
+     calculate_Aij(A,  coordinatesX, coordinatesS,coordinatesE, n);
 
      // Riešenie pre alpha
      MAT *alpha = mat_create_with_type(n, 1);
@@ -505,6 +511,7 @@ int main()
           for (int j = 0; j < 5; j++)
           {
                printf("%.10f\n", ELEM(A, i, j));
+
           }
      }
 
