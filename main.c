@@ -9,6 +9,7 @@
 #define GM 398600.5
 #define alt 230
 #define dGM 0.0000270141
+#define TOL 1e-8 // Tolerancia na konvergenciu
 
 MAT *mat_create_with_type(unsigned int rows, unsigned int cols)
 {
@@ -432,6 +433,114 @@ double vec_norm(MAT *v) {
      return sqrt(vec_dot_product(v, v));
 }
 
+int BiCGSTAB(MAT *A, MAT *b, MAT *x) {
+     int n = A->rows;
+     //vytvorenie pomocných vektorov
+     MAT *r = mat_create_with_type(n, 1);
+     MAT *r_hat = mat_create_with_type(n, 1);
+     MAT *v = mat_create_with_type(n, 1);
+     MAT *p = mat_create_with_type(n, 1);
+     MAT *s = mat_create_with_type(n, 1);
+     MAT *t = mat_create_with_type(n, 1);
+     MAT *Ap = mat_create_with_type(n, 1);
+    
+     // Skalárne premenné pre BiCGSTAB algoritmus
+     double rho = 1.0, rho_prev, alpha = 1.0, omega = 1.0;
+     double beta;
+
+     // Výpočet počiatočného rezidua r(0) = b - A * x(0)
+     mat_vec_mult(A, x, Ap); // Ap = A * x
+     vec_subtract(b, Ap, r); // r = b - Ap
+
+     //Nastavenie r_hat = r (predpokladáme, že r_hat je kópia počiatočného rezidua)
+     mat_zero(r_hat);
+     for (int i = 0; i < n; i++) {
+          ELEM(r_hat, i, 0) = ELEM(r, i, 0);  // r_hat = r
+     }
+
+     // BiCGSTAB iterations
+     for (int iter = 0; iter < n; iter++) {
+          //Výpočet ρ(i-1) = r_hat^T * r(i-1)
+          rho_prev = rho;
+          rho = vec_dot_product(r_hat, r); //// ρ(i-1) = r_hat^T * r
+
+          if (fabs(rho) < TOL) {
+               printf("Zlyhanie v BiCGSTAB: rho je príliš malé\n");
+               break;
+          }
+
+          //Ak i = 1, nastav p(1) = r(0)
+          if (iter == 0) {
+               for (int i = 0; i < n; i++) {
+               ELEM(p, i, 0) = ELEM(r, i, 0); // p0 = r0
+               }
+          // inak smerový vektor p(i) = r(i-1) + β(i-1)(p(i-1) - ω(i-1)v(i-1))
+          } else {
+               beta = (rho / rho_prev) * (alpha / omega);
+               for (int i = 0; i < n; i++) {
+                    ELEM(p, i, 0) = ELEM(r, i, 0) + beta * (ELEM(p, i, 0) - omega * ELEM(v, i, 0));
+               }
+          }
+
+          // v = A * p
+          mat_vec_mult(A, p, v);
+
+          //α(i) = ρ(i-1) / (r_hat^T * v(i))
+          alpha = rho / vec_dot_product(r_hat, v);
+
+          // s = r(i-1) - α(i) * v(i)
+          for (int i = 0; i < n; i++) {
+               ELEM(s, i, 0) = ELEM(r, i, 0) - alpha * ELEM(v, i, 0);
+          }
+
+          // Skontroluj normu vektora s; ak je dostatočne malá, ukonči iteráciu
+          if (vec_norm(s) < TOL) {
+               for (int i = 0; i < n; i++) {
+                    ELEM(x, i, 0) += alpha * ELEM(p, i, 0); // x(i) = x(i-1) + α(i) * p(i)
+               }
+               break;
+          }
+
+          // t = A * s
+          mat_vec_mult(A, s, t);
+
+          // ω(i) = (t^T * s) / (t^T * t)
+          omega = vec_dot_product(t, s) / vec_dot_product(t, t);
+
+          //Aktualizácia riešenia x(i) = x(i-1) + α(i) * p(i) + ω(i) * s(i)
+          for (int i = 0; i < n; i++) {
+               ELEM(x, i, 0) += alpha * ELEM(p, i, 0) + omega * ELEM(s, i, 0);
+          }
+
+          // Update r(i) = s - ω(i) * t
+          for (int i = 0; i < n; i++) {
+               ELEM(r, i, 0) = ELEM(s, i, 0) - omega * ELEM(t, i, 0);
+          }
+
+          // Checkni normu nového rezidua r; ak je dostatočne malé, ukonči iteráciu
+          if (vec_norm(r) < TOL) {
+               break;
+          }
+
+          // ak ω(i) = 0 -> delenie nulov -> zlyhanie
+          if (fabs(omega) < TOL) {
+               printf("Breakdown in BiCGSTAB: omega is too small\n");
+               break;
+          }
+     }
+
+     // Clean up
+     mat_destroy(r);
+     mat_destroy(r_hat);
+     mat_destroy(v);
+     mat_destroy(p);
+     mat_destroy(s);
+     mat_destroy(t);
+     mat_destroy(Ap);
+
+     return 0;
+}
+
 int main()
 {
      int n = 3602;
@@ -498,8 +607,20 @@ int main()
           ELEM(dGMarray, i, 1) = dGM;
      }
 
+
+    
+
+     // Call the BiCGSTAB solver
+     BiCGSTAB(A, dGMarray, alpha);
+
+     printf("Prvých 10 prvkov Alphy:\n");
+     for (int i = 0; i < 10; i++)
+     {
+          printf("%.10f\n", ELEM(alpha, i, 1));
+     }
+
      // výpočet Gij (musí mať rozmer 1xn), lebo alpha má nx1
-     MAT *Gij = mat_create_with_type(1, n);
+     /* MAT *Gij = mat_create_with_type(1, n);
      // VÝPOČET Gij = 1/(4Pi*rij)
      for (int i = 0; i < n; i++)
      {
@@ -510,7 +631,7 @@ int main()
                double rij = ELEM(distanceMatrix, i, j);
                ELEM(Gij, 1, i) = 1 / ((4 * M_PI) * rij);
           }
-     }
+     }  */
 
      // keď neprejde mat_division, kvôli rozmerom, môže invertovať matticu A a vynasobiť ju nasledovne alpha = A(^-1)*dGMarray //DRUHÉ MOŽNÉ RIEŠENIE
      /* if (mat_invert(A) == SUCCESS)
@@ -521,10 +642,10 @@ int main()
      else
      {
           printf("Nepodarilo sa vypočítať alphu.\n");
-     } */
+     }  */
 
      // Linerany system A * alpha = dgM, alpha = A^(-1) * dGMarray, A sa v solv. invertuje
-     if (mat_division(A, dGMarray, alpha) == SUCCESS)
+     /* if (mat_division(A, dGMarray, alpha) == SUCCESS)
      {
           printf("Alpha vector:\n");
           // mat_print(alpha); //
@@ -533,7 +654,7 @@ int main()
      {
           printf("Nepodarilo sa vypočítať alphu.\n");
      }
-
+ */
      // vypísanie dGMarray
 
      printf("Prvých 10 prvkov Aij:\n");
@@ -546,11 +667,11 @@ int main()
           }
      }
 
-     printf("Prvých 10 prvkov dGMarray:\n");
+    /*  printf("Prvých 10 prvkov dGMarray:\n");
      for (int i = 0; i < 10; i++)
      {
           printf("%.10f\n", ELEM(dGMarray, i, 1));
-     }
+     } */
 
      // Free the allocated memory
 
@@ -563,14 +684,14 @@ int main()
      // printf("Final vector u:\n");
      // mat_print(u);
 
-     MAT *u1 = mat_create_with_type(1, 1);
+     /* MAT *u1 = mat_create_with_type(1, 1);
      // mat_division(dGMarray, alpha, u1);
      // Násobenie VÝSLEDOK
 
      mat_multiply(Gij, alpha, u1);
      printf("Final vector u:\n");
 
-     mat_print(u1);
+     mat_print(u1); */
 
      // uvolenie alokovanej pamäte
      mat_destroy(coordinatesS);
@@ -581,7 +702,7 @@ int main()
      mat_destroy(A);
      mat_destroy(alpha);
      mat_destroy(dGMarray);
-     mat_destroy(u1);
+    //mat_destroy(u1);
      mat_destroy(B);
      mat_destroy(L);
      mat_destroy(H);
