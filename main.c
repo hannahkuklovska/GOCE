@@ -401,6 +401,37 @@ void compute_distance_vectors(MAT *coordinatesX, MAT *coordinatesS, MAT *distanc
      }
 }
 
+// funkcia na nasobenie matice vektorom, helper function na solver
+void mat_vec_mult(MAT *A, MAT *x, MAT *result) {
+     mat_zero(result); // Initialize the result vector with zero values
+     for (int i = 0; i < A->rows; i++) {
+          for (int j = 0; j < A->cols; j++) {
+               ELEM(result, i, 0) += ELEM(A, i, j) * ELEM(x, j, 0);
+          }
+     }
+}
+
+// helper function na solver, odpocitanie 2 vektorov
+void vec_subtract(MAT *v1, MAT *v2, MAT *result) {
+     for (int i = 0; i < v1->rows; i++) {
+          ELEM(result, i, 0) = ELEM(v1, i, 0) - ELEM(v2, i, 0);
+     }
+}
+
+// dot product 2 vektorov, helper function na solver
+double vec_dot_product(MAT *v1, MAT *v2) {
+     double dot_product = 0.0;
+     for (int i = 0; i < v1->rows; i++) {
+           dot_product += ELEM(v1, i, 0) * ELEM(v2, i, 0);
+     }
+     return dot_product;
+}
+
+//norma vektora, helper function na solver
+double vec_norm(MAT *v) {
+     return sqrt(vec_dot_product(v, v));
+}
+
 int main()
 {
      int n = 3602;
