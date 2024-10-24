@@ -21,6 +21,7 @@ void mat_unit(MAT *mat);
 void mat_random(MAT *mat);
 void mat_print(MAT *mat);
 MAT *mat_invert(MAT *input_matrix);
+MAT *mat_multiply_with_transpose(MAT *mat);
 char mat_division(MAT *a, MAT *b, MAT *c);
 
 #endif // MAT_H

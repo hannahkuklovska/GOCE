@@ -11,6 +11,42 @@
 #define dGM 0.0000270141
 #define TOL 1e-8 // Tolerancia na konvergenciu
 
+// Funckia na násobenie matice a k nej transponovanej matice
+// nevytváram explicitne AT
+
+MAT *mat_multiply_with_transpose(MAT *a)
+{
+     // musia sedieť dimenzie, resp. najprv, či nie sú nulové
+     if (!a || a->rows == 0 || a->cols == 0)
+     {
+          return NULL; // matica nie je dobre zadaná
+     }
+
+     // alokovanie matice
+     MAT *result = mat_create_with_type(a->rows, a->rows);
+     if (!result)
+     {
+          return NULL; // zle alokovane
+     }
+
+     //  A * AT
+     for (unsigned int i = 0; i < a->rows; i++)
+     {
+          for (unsigned int j = 0; j < a->rows; j++)
+          {
+               // vynulovanie
+               ELEM(result, i, j) = 0.0f;
+               // dot product
+               for (unsigned int k = 0; k < a->cols; k++)
+               {
+                    ELEM(result, i, j) += ELEM(a, i, k) * ELEM(a, j, k);
+               }
+          }
+     }
+
+     return result;
+}
+
 MAT *mat_create_with_type(unsigned int rows, unsigned int cols)
 {
      MAT *mat = (MAT *)malloc(sizeof(MAT));
@@ -290,9 +326,9 @@ void calculate_coordinates(MAT *coordinatesS, MAT *coordinatesX, MAT *coordinate
           ELEM(coordinatesS, i, 2) = R * sin(Brad);
 
           // X koordinaty
-          ELEM(coordinatesX, i, 0) = (R+alt) * cos(Brad) * cos(Lrad);
-          ELEM(coordinatesX, i, 1) = (R+alt) * cos(Brad) * sin(Lrad);
-          ELEM(coordinatesX, i, 2) = (R+alt) * sin(Brad);
+          ELEM(coordinatesX, i, 0) = (R + alt) * cos(Brad) * cos(Lrad);
+          ELEM(coordinatesX, i, 1) = (R + alt) * cos(Brad) * sin(Lrad);
+          ELEM(coordinatesX, i, 2) = (R + alt) * sin(Brad);
 
           // E koordinaty
           ELEM(coordinatesE, i, 0) = cos(Brad) * cos(Lrad);
@@ -327,11 +363,11 @@ void calculate_Aij(MAT *A, MAT *coordinatesX, MAT *coordinatesS, MAT *coordinate
           {
                double p1[3] = {ELEM(coordinatesX, i, 0), ELEM(coordinatesX, i, 1), ELEM(coordinatesX, i, 2)};
                double p2[3] = {ELEM(coordinatesS, j, 0), ELEM(coordinatesS, j, 1), ELEM(coordinatesS, j, 2)};
-               double dx,dy,dz, rij;
-               dx= p1[0] - p2[0];
-               dy= p1[1] - p2[1];
-               dz= p1[2] - p2[2];
-               rij= sqrt(dx*dx + dy*dy + dz*dz);
+               double dx, dy, dz, rij;
+               dx = p1[0] - p2[0];
+               dy = p1[1] - p2[1];
+               dz = p1[2] - p2[2];
+               rij = sqrt(dx * dx + dy * dy + dz * dz);
                double dotProduct;
                dotProduct = dx * ELEM(coordinatesE, i, 0) + dy * ELEM(coordinatesE, i, 1) + dz * ELEM(coordinatesE, i, 2);
                ELEM(A, i, j) = (1 / pow(rij, 3)) - ((3 * pow(dotProduct, 2)) / pow(rij, 5));
@@ -403,39 +439,48 @@ void compute_distance_vectors(MAT *coordinatesX, MAT *coordinatesS, MAT *distanc
 }
 
 // funkcia na nasobenie matice vektorom, helper function na solver
-void mat_vec_mult(MAT *A, MAT *x, MAT *result) {
+void mat_vec_mult(MAT *A, MAT *x, MAT *result)
+{
      mat_zero(result); // Initialize the result vector with zero values
-     for (int i = 0; i < A->rows; i++) {
-          for (int j = 0; j < A->cols; j++) {
+     for (int i = 0; i < A->rows; i++)
+     {
+          for (int j = 0; j < A->cols; j++)
+          {
                ELEM(result, i, 0) += ELEM(A, i, j) * ELEM(x, j, 0);
           }
      }
 }
 
 // helper function na solver, odpocitanie 2 vektorov
-void vec_subtract(MAT *v1, MAT *v2, MAT *result) {
-     for (int i = 0; i < v1->rows; i++) {
+void vec_subtract(MAT *v1, MAT *v2, MAT *result)
+{
+     for (int i = 0; i < v1->rows; i++)
+     {
           ELEM(result, i, 0) = ELEM(v1, i, 0) - ELEM(v2, i, 0);
      }
 }
 
 // dot product 2 vektorov, helper function na solver
-double vec_dot_product(MAT *v1, MAT *v2) {
+double vec_dot_product(MAT *v1, MAT *v2)
+{
      double dot_product = 0.0;
-     for (int i = 0; i < v1->rows; i++) {
-           dot_product += ELEM(v1, i, 0) * ELEM(v2, i, 0);
+     for (int i = 0; i < v1->rows; i++)
+     {
+          dot_product += ELEM(v1, i, 0) * ELEM(v2, i, 0);
      }
      return dot_product;
 }
 
-//norma vektora, helper function na solver
-double vec_norm(MAT *v) {
+// norma vektora, helper function na solver
+double vec_norm(MAT *v)
+{
      return sqrt(vec_dot_product(v, v));
 }
 
-int BiCGSTAB(MAT *A, MAT *b, MAT *x) {
+int BiCGSTAB(MAT *A, MAT *b, MAT *x)
+{
      int n = A->rows;
-     //vytvorenie pomocných vektorov
+     // vytvorenie pomocných vektorov
      MAT *r = mat_create_with_type(n, 1);
      MAT *r_hat = mat_create_with_type(n, 1);
      MAT *v = mat_create_with_type(n, 1);
@@ -443,7 +488,7 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x) {
      MAT *s = mat_create_with_type(n, 1);
      MAT *t = mat_create_with_type(n, 1);
      MAT *Ap = mat_create_with_type(n, 1);
-    
+
      // Skalárne premenné pre BiCGSTAB algoritmus
      double rho = 1.0, rho_prev, alpha = 1.0, omega = 1.0;
      double beta;
@@ -452,32 +497,40 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x) {
      mat_vec_mult(A, x, Ap); // Ap = A * x
      vec_subtract(b, Ap, r); // r = b - Ap
 
-     //Nastavenie r_hat = r (predpokladáme, že r_hat je kópia počiatočného rezidua)
+     // Nastavenie r_hat = r (predpokladáme, že r_hat je kópia počiatočného rezidua)
      mat_zero(r_hat);
-     for (int i = 0; i < n; i++) {
-          ELEM(r_hat, i, 0) = ELEM(r, i, 0);  // r_hat = r
+     for (int i = 0; i < n; i++)
+     {
+          ELEM(r_hat, i, 0) = ELEM(r, i, 0); // r_hat = r
      }
 
      // BiCGSTAB iterations
-     for (int iter = 0; iter < n; iter++) {
-          //Výpočet ρ(i-1) = r_hat^T * r(i-1)
+     for (int iter = 0; iter < n; iter++)
+     {
+          // Výpočet ρ(i-1) = r_hat^T * r(i-1)
           rho_prev = rho;
           rho = vec_dot_product(r_hat, r); //// ρ(i-1) = r_hat^T * r
 
-          if (fabs(rho) < TOL) {
+          if (fabs(rho) < TOL)
+          {
                printf("Zlyhanie v BiCGSTAB: rho je príliš malé\n");
                break;
           }
 
-          //Ak i = 1, nastav p(1) = r(0)
-          if (iter == 0) {
-               for (int i = 0; i < n; i++) {
-               ELEM(p, i, 0) = ELEM(r, i, 0); // p0 = r0
+          // Ak i = 1, nastav p(1) = r(0)
+          if (iter == 0)
+          {
+               for (int i = 0; i < n; i++)
+               {
+                    ELEM(p, i, 0) = ELEM(r, i, 0); // p0 = r0
                }
-          // inak smerový vektor p(i) = r(i-1) + β(i-1)(p(i-1) - ω(i-1)v(i-1))
-          } else {
+               // inak smerový vektor p(i) = r(i-1) + β(i-1)(p(i-1) - ω(i-1)v(i-1))
+          }
+          else
+          {
                beta = (rho / rho_prev) * (alpha / omega);
-               for (int i = 0; i < n; i++) {
+               for (int i = 0; i < n; i++)
+               {
                     ELEM(p, i, 0) = ELEM(r, i, 0) + beta * (ELEM(p, i, 0) - omega * ELEM(v, i, 0));
                }
           }
@@ -485,17 +538,20 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x) {
           // v = A * p
           mat_vec_mult(A, p, v);
 
-          //α(i) = ρ(i-1) / (r_hat^T * v(i))
+          // α(i) = ρ(i-1) / (r_hat^T * v(i))
           alpha = rho / vec_dot_product(r_hat, v);
 
           // s = r(i-1) - α(i) * v(i)
-          for (int i = 0; i < n; i++) {
+          for (int i = 0; i < n; i++)
+          {
                ELEM(s, i, 0) = ELEM(r, i, 0) - alpha * ELEM(v, i, 0);
           }
 
           // Skontroluj normu vektora s; ak je dostatočne malá, ukonči iteráciu
-          if (vec_norm(s) < TOL) {
-               for (int i = 0; i < n; i++) {
+          if (vec_norm(s) < TOL)
+          {
+               for (int i = 0; i < n; i++)
+               {
                     ELEM(x, i, 0) += alpha * ELEM(p, i, 0); // x(i) = x(i-1) + α(i) * p(i)
                }
                break;
@@ -507,23 +563,27 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x) {
           // ω(i) = (t^T * s) / (t^T * t)
           omega = vec_dot_product(t, s) / vec_dot_product(t, t);
 
-          //Aktualizácia riešenia x(i) = x(i-1) + α(i) * p(i) + ω(i) * s(i)
-          for (int i = 0; i < n; i++) {
+          // Aktualizácia riešenia x(i) = x(i-1) + α(i) * p(i) + ω(i) * s(i)
+          for (int i = 0; i < n; i++)
+          {
                ELEM(x, i, 0) += alpha * ELEM(p, i, 0) + omega * ELEM(s, i, 0);
           }
 
           // Update r(i) = s - ω(i) * t
-          for (int i = 0; i < n; i++) {
+          for (int i = 0; i < n; i++)
+          {
                ELEM(r, i, 0) = ELEM(s, i, 0) - omega * ELEM(t, i, 0);
           }
 
           // Checkni normu nového rezidua r; ak je dostatočne malé, ukonči iteráciu
-          if (vec_norm(r) < TOL) {
+          if (vec_norm(r) < TOL)
+          {
                break;
           }
 
           // ak ω(i) = 0 -> delenie nulov -> zlyhanie
-          if (fabs(omega) < TOL) {
+          if (fabs(omega) < TOL)
+          {
                printf("Breakdown in BiCGSTAB: omega is too small\n");
                break;
           }
@@ -557,7 +617,7 @@ int main()
      MAT *dg = mat_create_with_type(n, 1); // Matice pre dg
      MAT *f = mat_create_with_type(n, 1);  // Matice pre f
 
-     load_data("/Users/ninalackovicova/Downloads/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
+     load_data("/Users/hannah/Desktop/GOCE/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
      double B_vals[n], L_vals[n];
      for (int i = 0; i < n; i++)
@@ -587,13 +647,13 @@ int main()
      calculate_coordinates(coordinatesS, coordinatesX, coordinatesE, B_vals, L_vals, n, alt);
 
      // Výpočet matice vzdialeností
-     //calculate_distance_matrix(distanceMatrix, coordinatesX, coordinatesS, n);
+     // calculate_distance_matrix(distanceMatrix, coordinatesX, coordinatesS, n);
 
      // distanceVectors
-     //compute_distance_vectors(coordinatesX, coordinatesS, distanceVectors, n);
+     // compute_distance_vectors(coordinatesX, coordinatesS, distanceVectors, n);
      // Výpočet matice Aij
 
-     calculate_Aij(A,  coordinatesX, coordinatesS,coordinatesE, n);
+     calculate_Aij(A, coordinatesX, coordinatesS, coordinatesE, n);
 
      // Riešenie pre alpha
      MAT *alpha = mat_create_with_type(n, 1);
@@ -606,9 +666,6 @@ int main()
           // ELEM(rows, columns)
           ELEM(dGMarray, i, 1) = dGM;
      }
-
-
-    
 
      // Call the BiCGSTAB solver
      BiCGSTAB(A, dGMarray, alpha);
@@ -663,15 +720,14 @@ int main()
           for (int j = 0; j < 5; j++)
           {
                printf("%.10f\n", ELEM(A, i, j));
-
           }
      }
 
-    /*  printf("Prvých 10 prvkov dGMarray:\n");
-     for (int i = 0; i < 10; i++)
-     {
-          printf("%.10f\n", ELEM(dGMarray, i, 1));
-     } */
+     /*  printf("Prvých 10 prvkov dGMarray:\n");
+      for (int i = 0; i < 10; i++)
+      {
+           printf("%.10f\n", ELEM(dGMarray, i, 1));
+      } */
 
      // Free the allocated memory
 
@@ -693,6 +749,39 @@ int main()
 
      mat_print(u1); */
 
+     // EFEKTÍVNE NÁSOBENIE MATICE A K NEJ TRASPONOVANEJ MATICE
+
+     // skuska
+     MAT *Q = mat_create_with_type(2, 3);
+     if (Q)
+     {
+          // naplnenie matice
+          ELEM(Q, 0, 0) = 1.0f;
+          ELEM(Q, 0, 1) = 2.0f;
+          ELEM(Q, 0, 2) = 3.0f;
+          ELEM(Q, 1, 0) = 4.0f;
+          ELEM(Q, 1, 1) = 5.0f;
+          ELEM(Q, 1, 2) = 6.0f;
+
+          printf("Matica A:\n");
+          mat_print(Q);
+
+          // A krat A transponovane
+          MAT *result = mat_multiply_with_transpose(Q);
+          if (result)
+          {
+               printf("Výsledok A * A^T:\n");
+               mat_print(result);
+
+               // uvolnenie pamate
+               free(result->elem);
+               free(result);
+          }
+
+          free(Q->elem);
+          free(Q);
+     }
+
      // uvolenie alokovanej pamäte
      mat_destroy(coordinatesS);
      mat_destroy(coordinatesX);
@@ -702,7 +791,7 @@ int main()
      mat_destroy(A);
      mat_destroy(alpha);
      mat_destroy(dGMarray);
-    //mat_destroy(u1);
+     // mat_destroy(u1);
      mat_destroy(B);
      mat_destroy(L);
      mat_destroy(H);
