@@ -19,6 +19,7 @@ MAT *mat_multiply_with_transpose(MAT *a)
      // musia sedieť dimenzie, resp. najprv, či nie sú nulové
      if (!a || a->rows == 0 || a->cols == 0)
      {
+          // vysledna matica bude vždy štvorcová
           return NULL; // matica nie je dobre zadaná
      }
 
