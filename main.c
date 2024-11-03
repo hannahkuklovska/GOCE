@@ -31,6 +31,7 @@ MAT *mat_multiply_with_transpose(MAT *a)
      }
 
      //  A * AT
+     // vysledna[i][j] = sum (od k=0, po n-1) a[i][k]xa[j][k]
      for (unsigned int i = 0; i < a->rows; i++)
      {
           for (unsigned int j = 0; j < a->rows; j++)
