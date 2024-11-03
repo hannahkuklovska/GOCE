@@ -9,7 +9,7 @@
 #define GM 398600.5
 #define alt 230
 #define dGM 0.0000270141
-#define TOL 1e-8 // Tolerancia na konvergenciu
+#define TOL 1e-15 // Tolerancia na konvergenciu
 
 // Funckia na násobenie matice a k nej transponovanej matice
 // nevytváram explicitne AT
@@ -52,6 +52,11 @@ MAT *mat_multiply_with_transpose(MAT *a)
 MAT *mat_create_with_type(unsigned int rows, unsigned int cols)
 {
      MAT *mat = (MAT *)malloc(sizeof(MAT));
+     if (!mat)
+     {
+          fprintf(stderr, "Alokacia pamate pre maticu zlyhala, strukturalne.\n");
+          return NULL;
+     }
 
      if (mat == NULL)
      {
@@ -62,6 +67,7 @@ MAT *mat_create_with_type(unsigned int rows, unsigned int cols)
      mat->elem = (float *)malloc(rows * cols * sizeof(float));
      if (mat->elem == NULL)
      {
+          fprintf(stderr, "Alokacia pamate pre maticu zlyhala, nepodarilo sa alokovat elementy.\n");
           free(mat);
           return NULL;
      }
@@ -443,6 +449,12 @@ void compute_distance_vectors(MAT *coordinatesX, MAT *coordinatesS, MAT *distanc
 // funkcia na nasobenie matice vektorom, helper function na solver
 void mat_vec_mult(MAT *A, MAT *x, MAT *result)
 {
+
+     if (A->cols != x->rows)
+     {
+          fprintf(stderr, "Error: zle dimenzie na funckiu Matica krat vektor\n");
+          return;
+     }
      mat_zero(result); // Initialize the result vector with zero values
      for (int i = 0; i < A->rows; i++)
      {
@@ -456,6 +468,11 @@ void mat_vec_mult(MAT *A, MAT *x, MAT *result)
 // helper function na solver, odpocitanie 2 vektorov
 void vec_subtract(MAT *v1, MAT *v2, MAT *result)
 {
+     if (v1->rows != v2->rows)
+     {
+          fprintf(stderr, "Error: vektory nemaju rovnaku dlzku\n");
+          return;
+     }
      for (int i = 0; i < v1->rows; i++)
      {
           ELEM(result, i, 0) = ELEM(v1, i, 0) - ELEM(v2, i, 0);
@@ -465,6 +482,11 @@ void vec_subtract(MAT *v1, MAT *v2, MAT *result)
 // dot product 2 vektorov, helper function na solver
 double vec_dot_product(MAT *v1, MAT *v2)
 {
+     if (v1->rows != v2->rows)
+     {
+          fprintf(stderr, "Error: vektory musia mat rovnaku dlzku\n");
+          return 0.0; // or handle the error appropriately
+     }
      double dot_product = 0.0;
      for (int i = 0; i < v1->rows; i++)
      {
@@ -500,6 +522,14 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
      mat_vec_mult(A, x, Ap); // Ap = A * x
      vec_subtract(b, Ap, r); // r = b - Ap
 
+     // pociatocne reziduum
+     printf("Pociatocne reziduum r:\n");
+     for (int i = 0; i < n; i++)
+     {
+          printf("%f ", ELEM(r, i, 0));
+     }
+     printf("\n");
+
      // Nastavenie r_hat = r (predpokladáme, že r_hat je kópia počiatočného rezidua)
      mat_zero(r_hat);
      for (int i = 0; i < n; i++)
@@ -507,12 +537,22 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
           ELEM(r_hat, i, 0) = ELEM(r, i, 0); // r_hat = r
      }
 
+     // Debugging pre r_hat
+     printf("Pociatocne r_hat:\n");
+     for (int i = 0; i < n; i++)
+     {
+          printf("%f ", ELEM(r_hat, i, 0));
+     }
+     printf("\n");
+
      // BiCGSTAB iterations
      for (int iter = 0; iter < n; iter++)
      {
           // Výpočet ρ(i-1) = r_hat^T * r(i-1)
           rho_prev = rho;
           rho = vec_dot_product(r_hat, r); //// ρ(i-1) = r_hat^T * r
+
+          printf("Iteration: %d, rho: %f\n", iter, rho);
 
           if (fabs(rho) < TOL)
           {
@@ -670,8 +710,12 @@ int main()
           ELEM(dGMarray, i, 1) = dGM;
      }
 
-     // Call the BiCGSTAB solver
-     BiCGSTAB(A, dGMarray, alpha);
+     // BiCGSTAB solver
+     if (BiCGSTAB(A, dGMarray, alpha) != SUCCESS)
+     {
+          fprintf(stderr, "BiCGSTAB sa nepodarilo.\n");
+          // Handle the failure case
+     }
 
      printf("Prvých 10 prvkov Alphy:\n");
      for (int i = 0; i < 10; i++)
