@@ -492,8 +492,9 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
      MAT *Ap = mat_create_with_type(n, 1);
 
      // Skalárne premenné pre BiCGSTAB algoritmus
-     double rho = 1.0, rho_prev, alpha = 1.0, omega = 1.0;
+     double rho = 1.0, alpha = 1.0, omega = 1.0;
      double beta;
+     double rho_prev = rho; // nastavenie pred 1.iteraciou
 
      // Výpočet počiatočného rezidua r(0) = b - A * x(0)
      mat_vec_mult(A, x, Ap); // Ap = A * x
