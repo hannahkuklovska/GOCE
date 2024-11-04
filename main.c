@@ -9,7 +9,7 @@
 #define GM 398600.5
 #define alt 230
 #define dGM 0.0000270141
-#define TOL 1e-15 // Tolerancia na konvergenciu
+#define TOL 1e-6 // Tolerancia na konvergenciu
 
 // Funckia na násobenie matice a k nej transponovanej matice
 // nevytváram explicitne AT
@@ -538,8 +538,6 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
      mat_vec_mult(A, x, Ap); // Ap = A * x
      vec_subtract(b, Ap, r); // r = b - Ap
 
-     mat_copy(r_hat, r);
-
      // pociatocne reziduum
      printf("Pociatocne reziduum r:\n");
      for (int i = 0; i < n; i++)
@@ -678,7 +676,7 @@ int main()
      MAT *dg = mat_create_with_type(n, 1); // Matice pre dg
      MAT *f = mat_create_with_type(n, 1);  // Matice pre f
 
-     load_data("C:/Users/puvak/OneDrive/Počítač/Timovy projekt/GOCE-8/satelit.txt", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
+     load_data("C:/Users/puvak/OneDrive/Počítač/Timovy projekt/GOCE-8/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
      double B_vals[n], L_vals[n];
      for (int i = 0; i < n; i++)
