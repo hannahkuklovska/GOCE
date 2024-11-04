@@ -345,7 +345,7 @@ void calculate_coordinates(MAT *coordinatesS, MAT *coordinatesX, MAT *coordinate
      }
 }
 
-double distance(double *x1, double *x2)
+/*double distance(double *x1, double *x2)
 {
      return sqrt(pow(x2[0] - x1[0], 2) + pow(x2[1] - x1[1], 2) + pow(x2[2] - x1[2], 2));
 }
@@ -361,7 +361,23 @@ void calculate_distance_matrix(MAT *distanceMatrix, MAT *coordinatesX, MAT *coor
                ELEM(distanceMatrix, i, j) = distance(p1, p2);
           }
      }
+}*/
+
+// pocitanie vzdialenosti
+void calculate_distance_matrix(MAT *distanceMatrix, MAT *coordinatesX, MAT *coordinatesS, int n)
+{
+     for (int i = 0; i < n; i++)
+     {
+          for (int j = 0; j < n; j++)
+          {
+               double dx = ELEM(coordinatesX, i, 0) - ELEM(coordinatesS, j, 0);
+               double dy = ELEM(coordinatesX, i, 1) - ELEM(coordinatesS, j, 1);
+               double dz = ELEM(coordinatesX, i, 2) - ELEM(coordinatesS, j, 2);
+               ELEM(distanceMatrix, i, j) = sqrt(dx * dx + dy * dy + dz * dz);
+          }
+     }
 }
+
 
 void calculate_Aij(MAT *A, MAT *coordinatesX, MAT *coordinatesS, MAT *coordinatesE, int n)
 {
@@ -522,6 +538,8 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
      mat_vec_mult(A, x, Ap); // Ap = A * x
      vec_subtract(b, Ap, r); // r = b - Ap
 
+     mat_copy(r_hat, r);
+
      // pociatocne reziduum
      printf("Pociatocne reziduum r:\n");
      for (int i = 0; i < n; i++)
@@ -660,7 +678,7 @@ int main()
      MAT *dg = mat_create_with_type(n, 1); // Matice pre dg
      MAT *f = mat_create_with_type(n, 1);  // Matice pre f
 
-     load_data("/Users/hannah/Desktop/GOCE/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
+     load_data("C:/Users/puvak/OneDrive/Počítač/Timovy projekt/GOCE-8/satelit.txt", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
      double B_vals[n], L_vals[n];
      for (int i = 0; i < n; i++)
