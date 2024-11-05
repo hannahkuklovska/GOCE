@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #define R 6378
-#define N 
+#define N 8102 
 #define GM 398600.5
 #define alt 230
 #define dGM 0.0000270141
