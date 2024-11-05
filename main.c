@@ -5,11 +5,11 @@
 #include <stdlib.h>
 
 #define R 6378
-#define N 3602
+#define N 
 #define GM 398600.5
 #define alt 230
 #define dGM 0.0000270141
-#define TOL 1e-6 // Tolerancia na konvergenciu
+#define TOL 1e-9 // Tolerancia na konvergenciu
 
 // Funckia na násobenie matice a k nej transponovanej matice
 // nevytváram explicitne AT
@@ -378,7 +378,6 @@ void calculate_distance_matrix(MAT *distanceMatrix, MAT *coordinatesX, MAT *coor
      }
 }
 
-
 void calculate_Aij(MAT *A, MAT *coordinatesX, MAT *coordinatesS, MAT *coordinatesE, int n)
 {
      for (int i = 0; i < n; i++)
@@ -530,7 +529,7 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
      MAT *Ap = mat_create_with_type(n, 1);
 
      // Skalárne premenné pre BiCGSTAB algoritmus
-     double rho = 0, alpha = 1.0, omega = 1.0;
+     double rho = 1.0, alpha = 1.0, omega = 1.0;
      double beta;
      double rho_prev = rho; // nastavenie pred 1.iteraciou
 
@@ -539,12 +538,12 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
      vec_subtract(b, Ap, r); // r = b - Ap
 
      // pociatocne reziduum
-     printf("Pociatocne reziduum r:\n");
+     /* printf("Pociatocne reziduum r:\n");
      for (int i = 0; i < n; i++)
      {
           printf("%f ", ELEM(r, i, 0));
      }
-     printf("\n");
+     printf("\n"); */
 
      // Nastavenie r_hat = r (predpokladáme, že r_hat je kópia počiatočného rezidua)
      mat_zero(r_hat);
@@ -568,7 +567,7 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
           rho_prev = rho;
           rho = vec_dot_product(r_hat, r); //// ρ(i-1) = r_hat^T * r
 
-          printf("Iteration: %d, rho: %f\n", iter, rho);
+          printf("Iteration: %d, rho: %.10f\n", iter, rho);
 
           if (fabs(rho) < TOL)
           {
@@ -676,7 +675,7 @@ int main()
      MAT *dg = mat_create_with_type(n, 1); // Matice pre dg
      MAT *f = mat_create_with_type(n, 1);  // Matice pre f
 
-     load_data("/Users/ninalackovicova/Downloads/BL-32402.dat ", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
+     load_data("", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
      double B_vals[n], L_vals[n];
      for (int i = 0; i < n; i++)
