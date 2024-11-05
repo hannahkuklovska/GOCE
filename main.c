@@ -530,7 +530,7 @@ int BiCGSTAB(MAT *A, MAT *b, MAT *x)
      MAT *Ap = mat_create_with_type(n, 1);
 
      // Skalárne premenné pre BiCGSTAB algoritmus
-     double rho = 1.0, alpha = 1.0, omega = 1.0;
+     double rho = 0, alpha = 1.0, omega = 1.0;
      double beta;
      double rho_prev = rho; // nastavenie pred 1.iteraciou
 
@@ -676,7 +676,7 @@ int main()
      MAT *dg = mat_create_with_type(n, 1); // Matice pre dg
      MAT *f = mat_create_with_type(n, 1);  // Matice pre f
 
-     load_data("C:/Users/puvak/OneDrive/Počítač/Timovy projekt/GOCE-8/BL-3602.dat", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
+     load_data("/Users/ninalackovicova/Downloads/BL-32402.dat ", B, L, H, dg, f, n); // Úprava názvu súboru podľa potreby
 
      double B_vals[n], L_vals[n];
      for (int i = 0; i < n; i++)
